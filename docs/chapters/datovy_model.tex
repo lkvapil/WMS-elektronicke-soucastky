@@ -2,42 +2,49 @@
 \label{chap:datovy_model}
 
 Datový model je zachycen platformově nezávislým konceptuálním diagramem tříd,
-který zachycuje doménové koncepty, generalizaci, vazební třídy
-a kvalifikovanou vazbu.
+který zachycuje doménové koncepty, generalizaci a kvalifikovanou vazbu.
 
 \section{Přehled entit}
 
-Systém pracuje s~následujícími hlavními entitami:
+Systém pracuje s~následujícími hlavními třídami:
 
 \begin{description}
-  \item[\texttt{Component}] Elektronická součástka -- základní katalogová informace.
-  \item[\texttt{ComponentCategory}] Kategorie součástek (rezistor, kondenzátor, \ldots).
-  \item[\texttt{Location}] Fyzické místo v~skladovém prostoru.
-  \item[\texttt{Stock}] Zásoba -- propojení součástky, místa a množství.
-  \item[\texttt{StockMovement}] Pohyb zásob (příjem, výdej, přeskladnění, korekce).
-  \item[\texttt{Supplier}] Dodavatel součástek.
-  \item[\texttt{Order}] Nákupní objednávka u~dodavatele.
-  \item[\texttt{OrderItem}] Položka objednávky.
-  \item[\texttt{Project}] Projekt, na který jsou vydávány součástky.
-  \item[\texttt{User}] Uživatel systému.
-  \item[\texttt{AuditLog}] Auditní záznam všech změn.
+  \item[\texttt{PohybSkladu}] Abstraktní základní třída pro všechny pohyby skladu.
+        Obsahuje společné atributy \texttt{id}, \texttt{datum} a \texttt{mnozstvi}.
+  \item[\texttt{Naskladneni}] Konkrétní podtřída -- příjem zboží do skladu.
+        Rozšiřuje \texttt{PohybSkladu} o~atribut \texttt{lokace}.
+  \item[\texttt{Vyskladneni}] Konkrétní podtřída -- výdej zboží ze skladu.
+        Rozšiřuje \texttt{PohybSkladu} o~atribut \texttt{cil}.
+  \item[\texttt{Presun}] Konkrétní podtřída -- přesun zboží mezi lokacemi.
+        Rozšiřuje \texttt{PohybSkladu} o~atributy \texttt{zdrojLokace}
+        a \texttt{cilovaLokace}.
+  \item[\texttt{SkladovaLokace}] Fyzické místo v~skladovém prostoru
+        identifikované kódem \texttt{kodLokace}.
+  \item[\texttt{Soucastka}] Elektronická součástka s~katalogovými údaji
+        (\texttt{partNumber}, \texttt{nazev}, \texttt{kategorie}) a aktuálním množstvím.
+  \item[\texttt{Dodavatel}] Dodavatel součástek s~kontaktními údaji
+        (\texttt{nazev}, \texttt{zeme}, \texttt{adresa}, \texttt{email}).
 \end{description}
 
 \section{Konceptuální model tříd}
 
 Konceptuální model zachycuje:
 \begin{itemize}
-  \item \textbf{Generalizaci} -- dvouúrovňová hierarchie: \texttt{Komponenta}
-        $\to$ \texttt{PasivniKomponenta}, \texttt{AktivniKomponenta}, \texttt{Konektor}
-        $\to$ \texttt{Rezistor}, \texttt{Kondenzator}, \texttt{Induktor}, \ldots
-  \item \textbf{Vazební třídy} -- \texttt{Zasoba} (mezi \texttt{Komponenta}
-        a \texttt{SkladoveMisto}) a \texttt{PolozkaObjednavky} (mezi
-        \texttt{Objednavka} a \texttt{Komponenta}).
-  \item \textbf{Kvalifikovanou vazbu} -- \texttt{Dodavatel[katalogCislo]~$\to$~0..1~Komponenta}:
-        pro daného dodavatele a jeho katalogové číslo existuje nejvýše jedna
-        součástka. Bez kvalifikátoru by byla násobnost $0..*$.
-  \item \textbf{Kompozici} -- \texttt{InventurniCyklus} je složen
-        z \texttt{PolozkaInventury} (existenční závislost).
+  \item \textbf{Generalizaci (dědičnost)} -- abstraktní třída \texttt{PohybSkladu}
+        je rodičovskou třídou pro \texttt{Naskladneni}, \texttt{Vyskladneni}
+        a \texttt{Presun}. Sdílené atributy (\texttt{id}, \texttt{datum},
+        \texttt{mnozstvi}) a operace (\texttt{validovatMnozstvi()},
+        \texttt{ulozitZaznam()}) jsou definovány jednou v~rodičovské třídě.
+  \item \textbf{Kvalifikovanou vazbu} --
+        \texttt{Dodavatel[katalogCislo]~$\to$~0..1~Soucastka}:
+        pro daného dodavatele a jeho konkrétní katalogové číslo existuje
+        nejvýše jedna součástka. Bez kvalifikátoru by byla násobnost $0..*$.
+  \item \textbf{Agregaci} -- \texttt{SkladovaLokace} agreguje $0..*$
+        instancí \texttt{Soucastka} (součástka může existovat nezávisle
+        na lokaci).
+  \item \textbf{Asociace} -- každý pohyb skladu (\texttt{PohybSkladu})
+        se vztahuje k~právě jedné \texttt{SkladovaLokace} a právě jedné
+        \texttt{Soucastka}.
 \end{itemize}
 
 \begin{figure}[H]
@@ -58,126 +65,78 @@ Kompletní ER diagram datového modelu je zobrazen na \autoref{fig:er_diagram}.
   \label{fig:er_diagram}
 \end{figure}
 
-\section{Popis tabulek}
+\section{Popis atributů tříd}
 
-\subsection{Tabulka \texttt{component\_categories}}
+\subsection{Třída \texttt{PohybSkladu} (abstraktní)}
 
 \begin{table}[H]
   \centering
-  \caption{Tabulka component\_categories}
+  \caption{Atributy a metody třídy PohybSkladu}
   \begin{tabularx}{\textwidth}{llX}
     \toprule
-    \textbf{Sloupec} & \textbf{Typ}        & \textbf{Popis} \\
+    \textbf{Název}        & \textbf{Typ}  & \textbf{Popis} \\
     \midrule
-    id               & SERIAL PK           & Primární klíč \\
-    name             & VARCHAR(100) UNIQUE  & Název kategorie (Rezistor, IC, \ldots) \\
-    description      & TEXT                & Popis kategorie \\
-    parent\_id       & INTEGER FK          & Nadřazená kategorie (stromová struktura) \\
-    icon             & VARCHAR(50)         & Název ikony pro UI \\
-    created\_at      & TIMESTAMPTZ         & Čas vytvoření \\
+    id                    & int           & Jednoznačný identifikátor pohybu \\
+    datum                 & DateTime      & Datum a čas provedení pohybu \\
+    mnozstvi              & int           & Počet kusů daného pohybu \\
+    validovatMnozstvi()   & void          & Ověří, že množství je kladné číslo \\
+    ulozitZaznam()        & void          & Persistuje pohyb do úložiště \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-\subsection{Tabulka \texttt{components}}
+\subsection{Třída \texttt{Soucastka}}
 
 \begin{table}[H]
   \centering
-  \caption{Tabulka components}
+  \caption{Atributy a metody třídy Soucastka}
   \begin{tabularx}{\textwidth}{llX}
     \toprule
-    \textbf{Sloupec}    & \textbf{Typ}         & \textbf{Popis} \\
+    \textbf{Název}        & \textbf{Typ}  & \textbf{Popis} \\
     \midrule
-    id                  & SERIAL PK            & Primární klíč \\
-    part\_number        & VARCHAR(100) UNIQUE  & Katalogové číslo výrobce \\
-    name                & VARCHAR(200)         & Název součástky \\
-    category\_id        & INTEGER FK           & Kategorie \\
-    manufacturer        & VARCHAR(150)         & Výrobce \\
-    value               & VARCHAR(50)          & Hodnota (10k, 100nF, \ldots) \\
-    unit                & VARCHAR(20)          & Jednotka ($\Omega$, F, H, V, A, \ldots) \\
-    package             & VARCHAR(50)          & Pouzdro (SMD 0402, DIP-8, TO-92, \ldots) \\
-    tolerance           & VARCHAR(20)          & Tolerance (±5 \%, ±1 \%, \ldots) \\
-    voltage\_rating     & VARCHAR(30)          & Maximální napětí \\
-    datasheet\_url      & TEXT                 & URL na datasheet \\
-    barcode             & VARCHAR(100)         & Čárový kód EAN/QR \\
-    min\_stock          & INTEGER DEFAULT 0    & Minimální zásoba \\
-    description         & TEXT                 & Popis \\
-    notes               & TEXT                 & Interní poznámky \\
-    is\_active          & BOOLEAN DEFAULT TRUE & Aktivní / archivována \\
-    created\_at         & TIMESTAMPTZ          & Čas vytvoření \\
-    updated\_at         & TIMESTAMPTZ          & Čas poslední změny \\
+    partNumber            & String        & Katalogové číslo výrobce (unikátní) \\
+    nazev                 & String        & Obchodní název součástky \\
+    kategorie             & String        & Kategorie (rezistor, kondenzátor, \ldots) \\
+    mnozstvi              & int           & Aktuální stav zásob \\
+    aktualizovatUdaje()   & void          & Aktualizuje katalogové informace \\
+    ziskatStav()          & String        & Vrátí stav zásoby (dostatek / minimum / chybí) \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-\subsection{Tabulka \texttt{locations}}
+\subsection{Třída \texttt{SkladovaLokace}}
 
 \begin{table}[H]
   \centering
-  \caption{Tabulka locations}
+  \caption{Atributy a metody třídy SkladovaLokace}
   \begin{tabularx}{\textwidth}{llX}
     \toprule
-    \textbf{Sloupec} & \textbf{Typ}         & \textbf{Popis} \\
+    \textbf{Název}        & \textbf{Typ} & \textbf{Popis} \\
     \midrule
-    id               & SERIAL PK            & Primární klíč \\
-    code             & VARCHAR(50) UNIQUE   & Unikátní kód místa (A-01-03) \\
-    name             & VARCHAR(150)         & Popis místa (Regál A, přihrádka 3) \\
-    section          & VARCHAR(50)          & Sekce skladu \\
-    shelf            & VARCHAR(50)          & Regál \\
-    bin              & VARCHAR(50)          & Přihrádka / zásobník \\
-    parent\_id       & INTEGER FK           & Nadřazené místo \\
-    capacity         & INTEGER              & Kapacita (počet zásobníků) \\
-    is\_active       & BOOLEAN DEFAULT TRUE & Aktivní \\
+    kodLokace             & String       & Unikátní kód místa v~skladu (např.\,A-01-03) \\
+    popis                 & String       & Textový popis lokace \\
+    pridatSoucastku()     & void         & Přiřadí součástku do lokace \\
+    odebratSoucastku()    & void         & Odebere součástku z~lokace \\
+    zobrazObsah()         & List         & Vrátí seznam součástek v~lokaci \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-\subsection{Tabulka \texttt{stock}}
+\subsection{Třída \texttt{Dodavatel}}
 
 \begin{table}[H]
   \centering
-  \caption{Tabulka stock (zásoby)}
+  \caption{Atributy a metody třídy Dodavatel}
   \begin{tabularx}{\textwidth}{llX}
     \toprule
-    \textbf{Sloupec}  & \textbf{Typ}     & \textbf{Popis} \\
+    \textbf{Název}         & \textbf{Typ} & \textbf{Popis} \\
     \midrule
-    id                & SERIAL PK        & Primární klíč \\
-    component\_id     & INTEGER FK       & Odkaz na součástku \\
-    location\_id      & INTEGER FK       & Odkaz na místo \\
-    quantity          & INTEGER NOT NULL & Aktuální množství \\
-    reserved\_qty     & INTEGER DEFAULT 0& Rezervované množství \\
-    unit\_price       & NUMERIC(12,4)    & Pořizovací cena za kus \\
-    updated\_at       & TIMESTAMPTZ      & Čas poslední aktualizace \\
-    \midrule
-    \multicolumn{3}{l}{\textit{UNIQUE (component\_id, location\_id)}} \\
+    nazev                  & String       & Obchodní název dodavatele \\
+    zeme                   & String       & Země sídla dodavatele \\
+    adresa                 & String       & Poštovní adresa \\
+    email                  & String       & Kontaktní e-mail \\
+    aktualizovatKontakt()  & void         & Aktualizuje kontaktní údaje \\
+    zobrazSoucastky()      & List         & Vrátí seznam dodávaných součástek \\
     \bottomrule
   \end{tabularx}
 \end{table}
-
-\subsection{Tabulka \texttt{stock\_movements}}
-
-\begin{table}[H]
-  \centering
-  \caption{Tabulka stock\_movements (pohyby zásob)}
-  \begin{tabularx}{\textwidth}{llX}
-    \toprule
-    \textbf{Sloupec}    & \textbf{Typ}       & \textbf{Popis} \\
-    \midrule
-    id                  & SERIAL PK          & Primární klíč \\
-    movement\_type      & movement\_type\_enum & RECEIPT / ISSUE / TRANSFER / ADJUSTMENT \\
-    component\_id       & INTEGER FK         & Součástka \\
-    from\_location\_id  & INTEGER FK         & Zdrojové místo (NULL pro RECEIPT) \\
-    to\_location\_id    & INTEGER FK         & Cílové místo (NULL pro ISSUE) \\
-    quantity            & INTEGER NOT NULL   & Množství pohybu \\
-    unit\_price         & NUMERIC(12,4)      & Cena za kus \\
-    reference           & VARCHAR(100)       & Číslo dokladu (faktura, projekt, \ldots) \\
-    project\_id         & INTEGER FK         & Projekt (pro ISSUE) \\
-    order\_item\_id     & INTEGER FK         & Položka objednávky (pro RECEIPT) \\
-    notes               & TEXT               & Poznámka \\
-    created\_by         & INTEGER FK         & Uživatel \\
-    created\_at         & TIMESTAMPTZ        & Čas pohybu \\
-    \bottomrule
-  \end{tabularx}
-\end{table}
-
-

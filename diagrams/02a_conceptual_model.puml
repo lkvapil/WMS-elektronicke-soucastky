@@ -1,276 +1,81 @@
 @startuml 02a_conceptual_model
 hide circle
-!theme cerulean-outline
-title WMS Elektronické součástky\n① Konceptuální model tříd (platformově nezávislý)
+title WMS Elektronicke soucastky -- Konceptualni model trid
 
 skinparam backgroundColor #FAFAFA
 skinparam classBackgroundColor #EBF5FB
 skinparam classBorderColor #2E86C1
 skinparam classArrowColor #1A5276
 skinparam classFontSize 11
-skinparam noteBackgroundColor #FFFDE7
-skinparam noteBorderColor #F9A825
+skinparam classAttributeIconSize 0
 
-'══════════════════════════════════════════════════════════════════════════════
-'  GENERALIZACE – hierarchie elektronických komponent (2 úrovně dědičnosti)
-'══════════════════════════════════════════════════════════════════════════════
+abstract class PohybSkladu {
+  id : int
+  datum : DateTime
+  mnozstvi : int
+  --
+  validovatMnozstvi()
+  ulozitZaznam()
+}
 
-abstract class Komponenta {
+class Naskladneni {
+  lokace : String
+  --
+  provestNaskladneni()
+  zvysitMnozstvi()
+}
+
+class Vyskladneni {
+  cil : String
+  --
+  provestVyskladneni()
+  snizitMnozstvi()
+}
+
+class Presun {
+  zdrojLokace : String
+  cilovaLokace : String
+  --
+  provestPresun()
+}
+
+class SkladovaLokace {
+  kodLokace : String
+  popis : String
+  --
+  pridatSoucastku()
+  odebratSoucastku()
+  zobrazObsah()
+}
+
+class Soucastka {
   partNumber : String
-  name : String
-  manufacturer : String
-  barcode : String
-  minStock : Integer
-  description : String
-  notes : String
+  nazev : String
+  kategorie : String
+  mnozstvi : int
+  --
+  aktualizovatUdaje()
+  ziskatStav()
 }
-
-abstract class PasivniKomponenta {
-  value : String
-  unit : String
-  tolerance : String
-  voltageRating : String
-}
-
-abstract class AktivniKomponenta {
-  maxVoltage : String
-  maxCurrent : String
-  technology : String
-}
-
-class Konektor {
-  pinCount : Integer
-  pitch : String
-  mounting : String
-  gender : String
-}
-
-class Rezistor {
-  powerRating : String
-  tempCoefficient : String
-}
-
-class Kondenzator {
-  capacitance : String
-  dielectricType : String
-  esr : String
-}
-
-class Induktor {
-  inductance : String
-  saturationCurrent : String
-}
-
-class Tranzistor {
-  transistorType : String
-  hfe : String
-  maxPower : String
-}
-
-class IntegrovanyObvod {
-  icFamily : String
-  pinCount : Integer
-  operatingVoltage : String
-}
-
-class Dioda {
-  diodeType : String
-  forwardVoltage : String
-  reverseVoltage : String
-}
-
-'── Generalizace 1. úroveň ──────────────────────────────────────────────────
-Komponenta <|-- PasivniKomponenta
-Komponenta <|-- AktivniKomponenta
-Komponenta <|-- Konektor
-
-'── Generalizace 2. úroveň ──────────────────────────────────────────────────
-PasivniKomponenta <|-- Rezistor
-PasivniKomponenta <|-- Kondenzator
-PasivniKomponenta <|-- Induktor
-AktivniKomponenta <|-- Tranzistor
-AktivniKomponenta <|-- IntegrovanyObvod
-AktivniKomponenta <|-- Dioda
-
-'══════════════════════════════════════════════════════════════════════════════
-'  KATEGORIE (agregace)
-'══════════════════════════════════════════════════════════════════════════════
-
-class Kategorie {
-  name : String
-  description : String
-  icon : String
-}
-
-Kategorie "1" o-- "0..*" Komponenta : kategorizuje >
-
-'══════════════════════════════════════════════════════════════════════════════
-'  SKLAD – vazební třída Zasoba
-'══════════════════════════════════════════════════════════════════════════════
-
-class SkladoveMisto {
-  code : String
-  name : String
-  section : String
-  shelf : String
-  bin : String
-  capacity : Integer
-  isActive : Boolean
-}
-
-class Zasoba {
-  quantity : Integer
-  reservedQty : Integer
-  unitPrice : Decimal
-  updatedAt : DateTime
-}
-
-note top of Zasoba
-  <<association class>>
-  Vazební třída mezi
-  Komponenta a SkladoveMisto
-end note
-
-Komponenta "1" -- "0..*" SkladoveMisto : uložena na
-(Komponenta, SkladoveMisto) .. Zasoba
-
-'══════════════════════════════════════════════════════════════════════════════
-'  KVALIFIKOVANÁ VAZBA
-'  Dodavatel [katalogCislo] --> 0..1 Komponenta
-'  Pro daného dodavatele a jeho katalogové číslo existuje nejvýše
-'  jedna Komponenta. Bez kvalifikátoru je multiplicity 0..*
-'══════════════════════════════════════════════════════════════════════════════
 
 class Dodavatel {
-  name : String
-  code : String
-  contactPerson : String
+  nazev : String
+  zeme : String
+  adresa : String
   email : String
-  phone : String
-  website : String
-  leadTimeDays : Integer
-  isActive : Boolean
+  --
+  aktualizovatKontakt()
+  zobrazSoucastky()
 }
 
-Dodavatel "1" -- "0..1" Komponenta : [katalogCislo] >
-note on link
-  <<qualified association>>
-  Kvalifikátor: katalogCislo : String
-  Bez kvalifikátoru: Dodavatel 1 — 0..* Komponenta
-  S kvalifikátorem:  Dodavatel 1 — 0..1 Komponenta
-end note
+PohybSkladu <|-- Naskladneni
+PohybSkladu <|-- Vyskladneni
+PohybSkladu <|-- Presun
 
-'══════════════════════════════════════════════════════════════════════════════
-'  OBJEDNÁVKY – vazební třída PolozkaObjednavky
-'══════════════════════════════════════════════════════════════════════════════
+Dodavatel "1\n[katalogCislo]" --> "0..1" Soucastka : dodava >
 
-class Objednavka {
-  orderNumber : String
-  status : OrderStatus
-  orderDate : Date
-  expectedDelivery : Date
-  actualDelivery : Date
-  totalAmount : Decimal
-  notes : String
-}
-
-class PolozkaObjednavky {
-  quantityOrdered : Integer
-  quantityReceived : Integer
-  unitPrice : Decimal
-}
-
-note top of PolozkaObjednavky
-  <<association class>>
-  Vazební třída mezi
-  Objednavka a Komponenta
-end note
-
-Dodavatel "1" o-- "1..*" Objednavka : dodává >
-Objednavka "1" -- "1..*" Komponenta : obsahuje
-(Objednavka, Komponenta) .. PolozkaObjednavky
-
-'══════════════════════════════════════════════════════════════════════════════
-'  POHYBY ZÁSOB
-'══════════════════════════════════════════════════════════════════════════════
-
-class PohybZasob {
-  movementType : MovementType
-  quantity : Integer
-  unitPrice : Decimal
-  reference : String
-  notes : String
-  createdAt : DateTime
-}
-
-enum MovementType {
-  PRIJEM
-  VYDEJ
-  PRESKLADNENI
-  KOREKCE
-}
-
-enum OrderStatus {
-  NAVRH
-  ODESLANO
-  POTVRZENO
-  PRIJATO
-  STORNOVANO
-}
-
-enum UserRole {
-  ADMIN
-  SKLADNIK
-  CTENAR
-}
-
-Komponenta "1" <-- "0..*" PohybZasob : týká se
-SkladoveMisto "0..1" <-- "0..*" PohybZasob : fromLocation
-SkladoveMisto "0..1" <-- "0..*" PohybZasob : toLocation
-
-'══════════════════════════════════════════════════════════════════════════════
-'  PROJEKTY & UŽIVATELÉ
-'══════════════════════════════════════════════════════════════════════════════
-
-class Projekt {
-  code : String
-  name : String
-  description : String
-  status : String
-}
-
-class Uzivatel {
-  username : String
-  email : String
-  role : UserRole
-  fullName : String
-  isActive : Boolean
-}
-
-PohybZasob "0..*" --> "0..1" Projekt   : výdej pro >
-PohybZasob "0..*" --> "1"   Uzivatel   : provedl >
-Objednavka "0..*" --> "1"   Uzivatel   : vytvořil >
-
-'══════════════════════════════════════════════════════════════════════════════
-'  INVENTURA – kompozice
-'══════════════════════════════════════════════════════════════════════════════
-
-class InventurniCyklus {
-  startDate : DateTime
-  endDate : DateTime
-  status : String
-  notes : String
-}
-
-class PolozkaInventury {
-  expectedQty : Integer
-  countedQty : Integer
-  difference : Integer
-  isConfirmed : Boolean
-}
-
-InventurniCyklus  "1"    *-- "1..*" PolozkaInventury : kompozice >
-PolozkaInventury  "0..*" --> "1"    Zasoba           : ověřuje >
-InventurniCyklus  "0..*" --> "1"    Uzivatel         : zahájil >
+SkladovaLokace "1" o-- "0..*" Soucastka      : obsahuje >
+PohybSkladu "0..*" --> "1"    SkladovaLokace : probiha na >
+PohybSkladu "0..*" --> "1"    Soucastka      : tyka se >
 
 @enduml
