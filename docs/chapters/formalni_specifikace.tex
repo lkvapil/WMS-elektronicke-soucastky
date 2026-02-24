@@ -2,9 +2,8 @@
 \label{chap:formalni}
 
 Tato kapitola zavádí formální notaci pro popis dotazů nad datovým modelem
-\wms{}. Notace je inspirována lambda kalkulem a množinovou algebrou a je
-platformově nezávislá -- lze ji přímočaře přeložit do SQL (relační DB),
-Cypher (grafová DB) nebo libovolného API dotazu.
+\wms{}. Notace je inspirována lambda kalkulem a množinovou algebrou
+a je platformově nezávislá.
 
 %% ── Definice notace ──────────────────────────────────────────────────────────
 \section{Definice notace}
@@ -146,34 +145,3 @@ Položky inventury, kde se zjištěný počet liší od evidovaného
       \oplus (p.\mathit{countedQty} - p.\mathit{expectedQty})
   \bigr)
 \]
-
-\subsection{Překlad do Cypheru (Neo4j)}
-
-Dotaz z~\S5.1 (součástky pod minimem) v jazyce Cypher:
-
-\begin{lstlisting}[language=SQL, caption={Cypher – součástky pod minimálním stavem}]
-MATCH (k:Komponenta)
-OPTIONAL MATCH (k)-[z:ULOZENA_NA]->()
-WITH k, coalesce(sum(z.quantity), 0) AS totalStock
-WHERE totalStock < k.minStock
-RETURN k.name, k.partNumber, totalStock
-ORDER BY (k.minStock - totalStock) DESC
-\end{lstlisting}
-
-\subsection{Překlad do SQL (PostgreSQL)}
-
-Tentýž dotaz v SQL:
-
-\begin{lstlisting}[language=SQL, caption={SQL – součástky pod minimálním stavem}]
-SELECT
-    k.name,
-    k.part_number,
-    COALESCE(SUM(z.quantity), 0) AS total_stock,
-    k.min_stock,
-    k.min_stock - COALESCE(SUM(z.quantity), 0) AS deficit
-FROM komponenty k
-LEFT JOIN zasoby z ON z.component_id = k.id
-GROUP BY k.id, k.name, k.part_number, k.min_stock
-HAVING COALESCE(SUM(z.quantity), 0) < k.min_stock
-ORDER BY deficit DESC;
-\end{lstlisting}

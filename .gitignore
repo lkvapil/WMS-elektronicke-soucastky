@@ -13,10 +13,14 @@ docs/*.run.xml
 docs/*.synctex.gz
 docs/*.toc
 docs/chapters/*.aux
+docs/%OUTDIR%/
 
-# Vygenerované obrázky (regeneruj pomocí: make diagrams)
-docs/images/*.png
-docs/images/*.svg
+# Vygenerované obrázky – trackujeme PNG pro náhled na GitHubu
+# docs/images/*.png
+# docs/images/*.svg
+
+# LaTeX výstupní PDF (volitelně odkomentovat)
+# docs/main.pdf
 
 # OS
 .DS_Store

@@ -44,7 +44,6 @@
 \usepackage{longtable}
 \usepackage{array}
 \usepackage{tabularx}
-\usepackage{multirow}
 
 %% ── Výpisy kódu ─────────────────────────────────────────────────────────────
 \usepackage{listings}
@@ -58,31 +57,34 @@
   stringstyle=\color{wmsgreen},
   numbers=left,
   numberstyle=\tiny\color{wmsgray},
-  numbersep=5pt
+  numbersep=5pt,
+  extendedchars=true,
+  literate=
+    {á}{{\'{a}}}1 {é}{{\'{e}}}1 {í}{{\'{\i}}}1 {ó}{{\'{o}}}1 {ú}{{\'{u}}}1
+    {ě}{{\v{e}}}1 {š}{{\v{s}}}1 {č}{{\v{c}}}1 {ř}{{\v{r}}}1 {ž}{{\v{z}}}1
+    {ů}{{\r{u}}}1 {Á}{{\'{A}}}1 {É}{{\'{E}}}1 {Í}{{\'{I}}}1 {Ó}{{\'{O}}}1
+    {Ú}{{\'{U}}}1 {Ě}{{\v{E}}}1 {Š}{{\v{S}}}1 {Č}{{\v{C}}}1 {Ř}{{\v{R}}}1
+    {Ž}{{\v{Z}}}1 {Ů}{{\r{U}}}1,
 }
 
 %% ── Matematika ───────────────────────────────────────────────────────────────
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{mathtools}
-\usepackage{stmaryrd}
 
 %% ── Hypertextové odkazy ──────────────────────────────────────────────────────
 \usepackage[
   colorlinks=true,
-  linkcolor=wmsblue,
-  citecolor=wmsblue,
-  urlcolor=wmsblue,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=black,
   pdftitle={WMS – Elektronické součástky},
-  pdfauthor={Lukáš Kvapil},
+  pdfauthor={Bc. Tomáš Simandl, Bc. Tomáš Szetei, Bc. Lukáš Kvapil},
   pdfsubject={Warehouse Management System pro elektronické součástky}
 ]{hyperref}
 
-%% ── Zkratky a glosář ─────────────────────────────────────────────────────────
-\usepackage{acronym}
-
 %% ── Bibliografie ─────────────────────────────────────────────────────────────
-\usepackage[backend=biber, style=iso-numeric, sorting=nyt]{biblatex}
+\usepackage[backend=biber, style=numeric, sorting=nyt]{biblatex}
 \addbibresource{literatura.bib}
 
 %% ── Tikz (volitelně pro jednoduché grafy inline) ─────────────────────────────
@@ -103,16 +105,16 @@
   \centering
   \vspace*{2cm}
 
-  {\color{wmsblue}\rule{\linewidth}{1.5pt}}
+  {\rule{\linewidth}{1.5pt}}
   \vspace{0.5cm}
 
-  {\Huge\bfseries\color{wmsblue}
+  {\Huge\bfseries
     Systém pro správu skladu\\[0.4em]
     elektronických součástek
   }
 
   \vspace{0.3cm}
-  {\color{wmsblue}\rule{\linewidth}{1.5pt}}
+  {\rule{\linewidth}{1.5pt}}
 
   \vspace{1.5cm}
 
@@ -124,13 +126,14 @@
   \vfill
 
   \begin{tabular}{ll}
-    \textbf{Autor:}    & Lukáš Kvapil \\[4pt]
-    \textbf{Datum:}    & \today       \\[4pt]
-    \textbf{Verze:}    & 1.0.0        \\[4pt]
+    \textbf{Autoři:}   & Bc.~Tomáš Simandl  \\[4pt]
+                       & Bc.~Tomáš Szetei    \\[4pt]
+                       & Bc.~Lukáš Kvapil   \\[4pt]
+    \textbf{Datum:}    & \today                \\[4pt]
   \end{tabular}
 
   \vspace{1cm}
-  {\color{wmsgray}\small Dokumentace systému pro skladovou evidenci elektronických součástek}
+  {\small Dokumentace systému pro skladovou evidenci elektronických součástek}
 \end{titlepage}
 
 %% ── Abstakt ──────────────────────────────────────────────────────────────────
@@ -172,18 +175,18 @@ zásob, inventura, příjem, výdej, objednávky.
 \appendix
 \chapter{Slovník pojmů a zkratek}
 
-\begin{acronym}
-  \acro{WMS}{Warehouse Management System -- Systém pro správu skladu}
-  \acro{EAN}{European Article Number -- čárový kód}
-  \acro{QR}{Quick Response -- 2D čárový kód}
-  \acro{IC}{Integrated Circuit -- integrovaný obvod}
-  \acro{SMD}{Surface-Mount Device -- povrchová montáž}
-  \acro{THT}{Through-Hole Technology -- průchozí montáž}
-  \acro{REST}{Representational State Transfer -- architektonický styl API}
-  \acro{CRUD}{Create, Read, Update, Delete -- základní databázové operace}
-  \acro{ER}{Entity-Relationship -- diagram datových entit a vztahů}
-  \acro{UML}{Unified Modeling Language -- unifikovaný modelovací jazyk}
-\end{acronym}
+\begin{description}
+  \item[WMS] Warehouse Management System -- Systém pro správu skladu
+  \item[EAN] European Article Number -- čárový kód
+  \item[QR] Quick Response -- 2D čárový kód
+  \item[IC] Integrated Circuit -- integrovaný obvod
+  \item[SMD] Surface-Mount Device -- povrchová montáž
+  \item[THT] Through-Hole Technology -- průchozí montáž
+  \item[REST] Representational State Transfer -- architektonický styl API
+  \item[CRUD] Create, Read, Update, Delete -- základní databázové operace
+  \item[ER] Entity-Relationship -- diagram datových entit a vztahů
+  \item[UML] Unified Modeling Language -- unifikovaný modelovací jazyk
+\end{description}
 
 \chapter{Instalace a konfigurace}
 \label{app:instalace}
@@ -197,7 +200,7 @@ zásob, inventura, příjem, výdej, objednávky.
 \end{itemize}
 
 \section*{Generování diagramů z PlantUML}
-\begin{lstlisting}[language=bash, caption={Generování PNG diagramů z PUML souborů}]
+\begin{lstlisting}[language=bash, caption={Generovani PNG diagramu z PUML souboru}]
 # Instalace PlantUML (macOS)
 brew install plantuml
 

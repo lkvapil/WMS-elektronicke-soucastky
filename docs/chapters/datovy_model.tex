@@ -1,19 +1,9 @@
 \chapter{Datový model}
 \label{chap:datovy_model}
 
-Datový model je zachycen ve třech typech UML diagramů tříd, přičemž každý
-sleduje jiný účel:
-
-\begin{enumerate}
-  \item \textbf{Konceptuální model} -- platformově nezávislý, zachycuje doménové
-        koncepty, generalizaci, vazební třídy a kvalifikovanou vazbu
-        (\autoref{fig:conceptual}).
-  \item \textbf{Relační model} -- konsolidace pro PostgreSQL: tabulky se stereotypy
-        \texttt{<<PK>>}/\texttt{<<FK>>}, trigery, mezilehlé tabulky místo M:N
-        (\autoref{fig:relational}).
-  \item \textbf{Grafový model} -- konsolidace pro Neo4j: uzly, pojmenované hrany
-        \textsc{CAPS}, atributy na hranách jako asociační třídy (\autoref{fig:graph}).
-\end{enumerate}
+Datový model je zachycen platformově nezávislým konceptuálním diagramem tříd,
+který zachycuje doménové koncepty, generalizaci, vazební třídy
+a kvalifikovanou vazbu.
 
 \section{Přehled entit}
 
@@ -55,34 +45,6 @@ Konceptuální model zachycuje:
   \includegraphics[width=\textwidth]{02a_conceptual_model.png}
   \caption{Konceptuální model tříd}
   \label{fig:conceptual}
-\end{figure}
-
-\section{Relační model (PostgreSQL)}
-
-Model pro relační databázi implementuje dědičnost pomocí vzoru
-\emph{Class Table Inheritance}: každá třída v hierarchii má vlastní tabulku,
-jejíž primární klíč je zároveň cizím klíčem na nadřazenou tabulku. Vztahy
-M:N jsou rozloženy na dvě vazby 1:N přes mezilehlou tabulku.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{02b_relational_model.png}
-  \caption{Konsolidovaný model pro relační databázi}
-  \label{fig:relational}
-\end{figure}
-
-\section{Grafový model (Neo4j)}
-
-Grafový model využívá vícenásobné labely pro dědičnost
-(např. uzel s labely \texttt{:Komponenta:PasivniKomponenta:Rezistor}).
-Hrany jsou pojmenovány \textsc{velkými písmeny} a mohou nést vlastní atributy
--- ty jsou zachyceny jako asociační třídy.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{02c_graph_model.png}
-  \caption{Konsolidovaný model pro grafovou databázi}
-  \label{fig:graph}
 \end{figure}
 
 \section{ER diagram}
@@ -132,7 +94,7 @@ Kompletní ER diagram datového modelu je zobrazen na \autoref{fig:er_diagram}.
     category\_id        & INTEGER FK           & Kategorie \\
     manufacturer        & VARCHAR(150)         & Výrobce \\
     value               & VARCHAR(50)          & Hodnota (10k, 100nF, \ldots) \\
-    unit                & VARCHAR(20)          & Jednotka (Ω, F, H, V, A, \ldots) \\
+    unit                & VARCHAR(20)          & Jednotka ($\Omega$, F, H, V, A, \ldots) \\
     package             & VARCHAR(50)          & Pouzdro (SMD 0402, DIP-8, TO-92, \ldots) \\
     tolerance           & VARCHAR(20)          & Tolerance (±5 \%, ±1 \%, \ldots) \\
     voltage\_rating     & VARCHAR(30)          & Maximální napětí \\

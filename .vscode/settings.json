@@ -1,0 +1,85 @@
+{
+  // ── LaTeX Workshop ────────────────────────────────────────────────────────
+  "latex-workshop.latex.rootFile.useSubFile": false,
+
+  // Hlavní soubor
+  "latex-workshop.latex.rootFile.doNotPrompt": true,
+
+  // Recipe pro build: latexmk s pdflatex + biber
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "latexmk (pdflatex + biber)",
+      "tools": ["latexmk"]
+    },
+    {
+      "name": "pdflatex × 3",
+      "tools": ["pdflatex", "pdflatex", "pdflatex"]
+    }
+  ],
+
+  // Definice nástrojů
+  "latex-workshop.latex.tools": [
+    {
+      "name": "latexmk",
+      "command": "latexmk",
+      "args": [
+        "-pdf",
+        "-pdflatex=pdflatex -interaction=nonstopmode -synctex=1",
+        "-bibtex",
+        "-outdir=%OUTDIR%",
+        "-f",
+        "%DOC%"
+      ],
+      "env": {}
+    },
+    {
+      "name": "pdflatex",
+      "command": "pdflatex",
+      "args": [
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-file-line-error",
+        "%DOC%"
+      ],
+      "env": {}
+    },
+    {
+      "name": "biber",
+      "command": "biber",
+      "args": ["%DOCFILE%"],
+      "env": {}
+    }
+  ],
+
+  // Automatický build při uložení
+  "latex-workshop.latex.autoBuild.run": "onSave",
+
+  // Výchozí recipe
+  "latex-workshop.latex.recipe.default": "latexmk (pdflatex + biber)",
+
+  // Čistit pomocné soubory po buildu
+  "latex-workshop.latex.autoClean.run": "never",
+
+  // Pomocné přípony ke smazání při clean
+  "latex-workshop.latex.clean.fileTypes": [
+    "*.aux", "*.bbl", "*.bcf", "*.blg", "*.fdb_latexmk", "*.fls",
+    "*.lof", "*.log", "*.lot", "*.out", "*.run.xml", "*.synctex.gz",
+    "*.toc"
+  ],
+
+  // Zobraz chyby v Problems panelu
+  "latex-workshop.message.error.show": true,
+  "latex-workshop.message.warning.show": false,
+
+  // SyncTeX – zpětné propojení PDF ↔ zdroj (Cmd+klik v PDF)
+  "latex-workshop.synctex.afterBuild.enabled": true,
+
+  // Viewer pro PDF
+  "latex-workshop.view.pdf.viewer": "tab",
+
+  // PlantUML: asociace souborů
+  "files.associations": {
+    "*.puml": "plantuml",
+    "*.pu": "plantuml"
+  }
+}
