@@ -1,0 +1,208 @@
+@startuml 03_er_diagram
+!theme cerulean-outline
+title WMS Elektronické součástky – ER diagram (Entity-Relationship)
+
+skinparam backgroundColor #FAFAFA
+skinparam linetype ortho
+
+' Používáme entity notation (Crow's Foot pomocí |o, ||, }|, }o)
+
+entity "users" as users {
+  * id : SERIAL <<PK>>
+  --
+  * username : VARCHAR(80) <<UNIQUE>>
+  * email : VARCHAR(255) <<UNIQUE>>
+  * password_hash : VARCHAR(255)
+  * role : user_role_enum
+  full_name : VARCHAR(150)
+  * is_active : BOOLEAN
+  created_at : TIMESTAMPTZ
+  last_login : TIMESTAMPTZ
+}
+
+entity "component_categories" as cat {
+  * id : SERIAL <<PK>>
+  --
+  * name : VARCHAR(100) <<UNIQUE>>
+  description : TEXT
+  icon : VARCHAR(50)
+  parent_id : INTEGER <<FK→cat.id>>
+  created_at : TIMESTAMPTZ
+}
+
+entity "components" as comp {
+  * id : SERIAL <<PK>>
+  --
+  * part_number : VARCHAR(100) <<UNIQUE>>
+  * name : VARCHAR(200)
+  category_id : INTEGER <<FK→cat.id>>
+  manufacturer : VARCHAR(150)
+  value : VARCHAR(50)
+  unit : VARCHAR(20)
+  package : VARCHAR(50)
+  tolerance : VARCHAR(20)
+  voltage_rating : VARCHAR(30)
+  datasheet_url : TEXT
+  barcode : VARCHAR(100)
+  * min_stock : INTEGER
+  description : TEXT
+  notes : TEXT
+  * is_active : BOOLEAN
+  created_at : TIMESTAMPTZ
+  updated_at : TIMESTAMPTZ
+}
+
+entity "locations" as loc {
+  * id : SERIAL <<PK>>
+  --
+  * code : VARCHAR(50) <<UNIQUE>>
+  * name : VARCHAR(150)
+  section : VARCHAR(50)
+  shelf : VARCHAR(50)
+  bin : VARCHAR(50)
+  capacity : INTEGER
+  parent_id : INTEGER <<FK→loc.id>>
+  * is_active : BOOLEAN
+}
+
+entity "stock" as stock {
+  * id : SERIAL <<PK>>
+  --
+  * component_id : INTEGER <<FK→comp.id>>
+  * location_id : INTEGER <<FK→loc.id>>
+  * quantity : INTEGER
+  reserved_qty : INTEGER
+  unit_price : NUMERIC(12,4)
+  updated_at : TIMESTAMPTZ
+  --
+  <<UNIQUE (component_id, location_id)>>
+}
+
+entity "stock_movements" as mvt {
+  * id : SERIAL <<PK>>
+  --
+  * movement_type : movement_type_enum
+  * component_id : INTEGER <<FK→comp.id>>
+  from_location_id : INTEGER <<FK→loc.id>>
+  to_location_id : INTEGER <<FK→loc.id>>
+  * quantity : INTEGER
+  unit_price : NUMERIC(12,4)
+  reference : VARCHAR(100)
+  project_id : INTEGER <<FK→projects.id>>
+  order_item_id : INTEGER <<FK→order_items.id>>
+  notes : TEXT
+  * created_by : INTEGER <<FK→users.id>>
+  * created_at : TIMESTAMPTZ
+}
+
+entity "suppliers" as sup {
+  * id : SERIAL <<PK>>
+  --
+  * name : VARCHAR(200)
+  code : VARCHAR(50) <<UNIQUE>>
+  contact_person : VARCHAR(150)
+  email : VARCHAR(255)
+  phone : VARCHAR(50)
+  website : VARCHAR(255)
+  lead_time_days : INTEGER
+  notes : TEXT
+  * is_active : BOOLEAN
+  created_at : TIMESTAMPTZ
+}
+
+entity "orders" as ord {
+  * id : SERIAL <<PK>>
+  --
+  * order_number : VARCHAR(50) <<UNIQUE>>
+  * supplier_id : INTEGER <<FK→suppliers.id>>
+  * status : order_status_enum
+  * order_date : DATE
+  expected_delivery : DATE
+  actual_delivery : DATE
+  total_amount : NUMERIC(14,2)
+  notes : TEXT
+  * created_by : INTEGER <<FK→users.id>>
+  created_at : TIMESTAMPTZ
+}
+
+entity "order_items" as oi {
+  * id : SERIAL <<PK>>
+  --
+  * order_id : INTEGER <<FK→orders.id>>
+  * component_id : INTEGER <<FK→comp.id>>
+  * quantity_ordered : INTEGER
+  quantity_received : INTEGER
+  * unit_price : NUMERIC(12,4)
+  notes : TEXT
+}
+
+entity "projects" as proj {
+  * id : SERIAL <<PK>>
+  --
+  * code : VARCHAR(50) <<UNIQUE>>
+  * name : VARCHAR(200)
+  description : TEXT
+  status : VARCHAR(30)
+  * created_by : INTEGER <<FK→users.id>>
+  created_at : TIMESTAMPTZ
+}
+
+entity "inventory_cycles" as inv {
+  * id : SERIAL <<PK>>
+  --
+  * start_date : TIMESTAMPTZ
+  end_date : TIMESTAMPTZ
+  * status : VARCHAR(30)
+  * created_by : INTEGER <<FK→users.id>>
+  notes : TEXT
+}
+
+entity "inventory_items" as invitem {
+  * id : SERIAL <<PK>>
+  --
+  * cycle_id : INTEGER <<FK→inv.id>>
+  * stock_id : INTEGER <<FK→stock.id>>
+  * expected_qty : INTEGER
+  counted_qty : INTEGER
+  is_confirmed : BOOLEAN
+}
+
+entity "audit_log" as audit {
+  * id : SERIAL <<PK>>
+  --
+  * entity_type : VARCHAR(50)
+  * entity_id : INTEGER
+  * action : VARCHAR(30)
+  old_values : JSONB
+  new_values : JSONB
+  ip_address : INET
+  * created_by : INTEGER <<FK→users.id>>
+  * created_at : TIMESTAMPTZ
+}
+
+'══════════════════════════════════════════════════════════════════════════════
+'  KARDINALITA
+'══════════════════════════════════════════════════════════════════════════════
+
+cat         ||--o{ comp      : "kategorizuje"
+cat         ||--o{ cat       : "podkategorie"
+loc         ||--o{ loc       : "nadřazená"
+comp        ||--o{ stock     : "evidována"
+loc         ||--o{ stock     : "umístěna"
+comp        ||--o{ mvt       : "pohybuje se"
+loc         |o--o{ mvt       : "from"
+loc         |o--o{ mvt       : "to"
+users       ||--o{ mvt       : "provádí"
+users       ||--o{ ord       : "vytváří"
+users       ||--o{ proj      : "vlastní"
+users       ||--o{ inv       : "zahajuje"
+users       ||--o{ audit     : "generuje"
+sup         ||--o{ ord       : "dodává"
+ord         ||--|{ oi        : "obsahuje"
+comp        ||--o{ oi        : "objednávána"
+oi          |o--o{ mvt       : "navazuje"
+proj        |o--o{ mvt       : "výdej pro"
+inv         ||--|{ invitem   : "sleduje"
+stock       ||--o{ invitem   : "počítána"
+
+@enduml

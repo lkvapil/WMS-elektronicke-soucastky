@@ -1,0 +1,23 @@
+# LaTeX pomocné soubory
+docs/*.aux
+docs/*.bbl
+docs/*.bcf
+docs/*.blg
+docs/*.fdb_latexmk
+docs/*.fls
+docs/*.lof
+docs/*.log
+docs/*.lot
+docs/*.out
+docs/*.run.xml
+docs/*.synctex.gz
+docs/*.toc
+docs/chapters/*.aux
+
+# Vygenerované obrázky (regeneruj pomocí: make diagrams)
+docs/images/*.png
+docs/images/*.svg
+
+# OS
+.DS_Store
+Thumbs.db

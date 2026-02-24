@@ -1,0 +1,149 @@
+@startuml 07_component_diagram
+!theme cerulean-outline
+title WMS Elektronické součástky – Komponentový diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #D6EAF8
+  BorderColor #2E86C1
+  ArrowColor #1A5276
+  FontSize 11
+}
+skinparam package {
+  BackgroundColor #EBF5FB
+  BorderColor #85C1E9
+  FontSize 12
+}
+skinparam database {
+  BackgroundColor #FAD7A0
+  BorderColor #E67E22
+}
+skinparam cloud {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+skinparam node {
+  BackgroundColor #FDEBD0
+  BorderColor #CA6F1E
+}
+
+'══════════════════════════════════════════════════════════════════════════════
+'  KLIENTSKÁ VRSTVA
+'══════════════════════════════════════════════════════════════════════════════
+package "Klientská vrstva (Browser)" {
+  component "React App\n(TypeScript)" as ReactApp {
+    component "Dashboard\nModule" as Dashboard
+    component "Components\nModule" as CompModule
+    component "Stock\nModule" as StockModule
+    component "Orders\nModule" as OrderModule
+    component "Reports\nModule" as ReportModule
+    component "Admin\nModule" as AdminModule
+  }
+  
+  component "Axios HTTP\nClient" as Axios
+  component "React Query\n(cache)" as RQ
+  
+  ReactApp --> Axios
+  ReactApp --> RQ
+}
+
+'══════════════════════════════════════════════════════════════════════════════
+'  API VRSTVA
+'══════════════════════════════════════════════════════════════════════════════
+package "API vrstva (FastAPI / Python)" {
+
+  component "Auth Router\n/api/auth" as AuthRouter
+  component "Components Router\n/api/components" as CompRouter
+  component "Stock Router\n/api/stock" as StockRouter
+  component "Orders Router\n/api/orders" as OrderRouter
+  component "Reports Router\n/api/reports" as ReportRouter
+  component "Admin Router\n/api/admin" as AdminRouter
+  
+  package "Middleware" {
+    component "JWT Auth\nMiddleware" as JWTMw
+    component "RBAC\nMiddleware" as RBACMw
+    component "Rate Limiter" as RateMw
+    component "Request Logger" as LogMw
+  }
+  
+  package "Services" {
+    component "AuthService" as AuthSvc
+    component "StockService" as StockSvc
+    component "OrderService" as OrderSvc
+    component "NotifService" as NotifSvc
+    component "ReportService" as ReportSvc
+  }
+  
+  package "Repositories" {
+    component "ComponentRepo" as CompRepo
+    component "StockRepo" as StockRepo
+    component "OrderRepo" as OrderRepo
+    component "UserRepo" as UserRepo
+  }
+  
+  AuthRouter --> AuthSvc
+  CompRouter --> CompRepo
+  StockRouter --> StockSvc
+  OrderRouter --> OrderSvc
+  ReportRouter --> ReportSvc
+  AdminRouter --> UserRepo
+  
+  StockSvc --> StockRepo
+  StockSvc --> CompRepo
+  StockSvc --> NotifSvc
+  OrderSvc --> OrderRepo
+  OrderSvc --> CompRepo
+  ReportSvc --> StockRepo
+  ReportSvc --> OrderRepo
+}
+
+'══════════════════════════════════════════════════════════════════════════════
+'  DATOVÁ VRSTVA
+'══════════════════════════════════════════════════════════════════════════════
+package "Datová vrstva" {
+  database "PostgreSQL 15\n(primary)" as PG_Primary
+  database "PostgreSQL\n(replica – čtení)" as PG_Replica
+  
+  component "SQLAlchemy\nORM + Alembic" as ORM
+  component "Redis Cache\n(zásoby, sessions)" as Redis
+  
+  ORM --> PG_Primary : writes
+  ORM --> PG_Replica : reads
+}
+
+'══════════════════════════════════════════════════════════════════════════════
+'  PODPŮRNÉ SLUŽBY
+'══════════════════════════════════════════════════════════════════════════════
+cloud "Podpůrné služby" {
+  component "SMTP Server\n(e-mail notifikace)" as SMTP
+  component "MinIO / S3\n(PDF, datasheets)" as S3
+  component "Celery + Redis\n(plánované úlohy)" as Celery
+}
+
+'══════════════════════════════════════════════════════════════════════════════
+'  PROPOJENÍ VRSTEV
+'══════════════════════════════════════════════════════════════════════════════
+Axios --> AuthRouter   : HTTPS REST
+Axios --> CompRouter   : HTTPS REST
+Axios --> StockRouter  : HTTPS REST
+Axios --> OrderRouter  : HTTPS REST
+Axios --> ReportRouter : HTTPS REST
+Axios --> AdminRouter  : HTTPS REST
+
+JWTMw --> AuthSvc
+RBACMw --> UserRepo
+
+CompRepo --> ORM
+StockRepo --> ORM
+OrderRepo --> ORM
+UserRepo --> ORM
+
+StockRepo --> Redis : cache zásoby
+AuthSvc --> Redis   : sessions
+
+NotifSvc --> SMTP
+ReportSvc --> S3
+Celery --> NotifSvc
+Celery --> ReportSvc
+
+@enduml

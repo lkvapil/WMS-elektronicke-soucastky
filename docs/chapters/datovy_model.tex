@@ -1,0 +1,221 @@
+\chapter{Datový model}
+\label{chap:datovy_model}
+
+Datový model je zachycen ve třech typech UML diagramů tříd, přičemž každý
+sleduje jiný účel:
+
+\begin{enumerate}
+  \item \textbf{Konceptuální model} -- platformově nezávislý, zachycuje doménové
+        koncepty, generalizaci, vazební třídy a kvalifikovanou vazbu
+        (\autoref{fig:conceptual}).
+  \item \textbf{Relační model} -- konsolidace pro PostgreSQL: tabulky se stereotypy
+        \texttt{<<PK>>}/\texttt{<<FK>>}, trigery, mezilehlé tabulky místo M:N
+        (\autoref{fig:relational}).
+  \item \textbf{Grafový model} -- konsolidace pro Neo4j: uzly, pojmenované hrany
+        \textsc{CAPS}, atributy na hranách jako asociační třídy (\autoref{fig:graph}).
+\end{enumerate}
+
+\section{Přehled entit}
+
+Systém pracuje s~následujícími hlavními entitami:
+
+\begin{description}
+  \item[\texttt{Component}] Elektronická součástka -- základní katalogová informace.
+  \item[\texttt{ComponentCategory}] Kategorie součástek (rezistor, kondenzátor, \ldots).
+  \item[\texttt{Location}] Fyzické místo v~skladovém prostoru.
+  \item[\texttt{Stock}] Zásoba -- propojení součástky, místa a množství.
+  \item[\texttt{StockMovement}] Pohyb zásob (příjem, výdej, přeskladnění, korekce).
+  \item[\texttt{Supplier}] Dodavatel součástek.
+  \item[\texttt{Order}] Nákupní objednávka u~dodavatele.
+  \item[\texttt{OrderItem}] Položka objednávky.
+  \item[\texttt{Project}] Projekt, na který jsou vydávány součástky.
+  \item[\texttt{User}] Uživatel systému.
+  \item[\texttt{AuditLog}] Auditní záznam všech změn.
+\end{description}
+
+\section{Konceptuální model tříd}
+
+Konceptuální model zachycuje:
+\begin{itemize}
+  \item \textbf{Generalizaci} -- dvouúrovňová hierarchie: \texttt{Komponenta}
+        $\to$ \texttt{PasivniKomponenta}, \texttt{AktivniKomponenta}, \texttt{Konektor}
+        $\to$ \texttt{Rezistor}, \texttt{Kondenzator}, \texttt{Induktor}, \ldots
+  \item \textbf{Vazební třídy} -- \texttt{Zasoba} (mezi \texttt{Komponenta}
+        a \texttt{SkladoveMisto}) a \texttt{PolozkaObjednavky} (mezi
+        \texttt{Objednavka} a \texttt{Komponenta}).
+  \item \textbf{Kvalifikovanou vazbu} -- \texttt{Dodavatel[katalogCislo]~$\to$~0..1~Komponenta}:
+        pro daného dodavatele a jeho katalogové číslo existuje nejvýše jedna
+        součástka. Bez kvalifikátoru by byla násobnost $0..*$.
+  \item \textbf{Kompozici} -- \texttt{InventurniCyklus} je složen
+        z \texttt{PolozkaInventury} (existenční závislost).
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{02a_conceptual_model.png}
+  \caption{Konceptuální model tříd}
+  \label{fig:conceptual}
+\end{figure}
+
+\section{Relační model (PostgreSQL)}
+
+Model pro relační databázi implementuje dědičnost pomocí vzoru
+\emph{Class Table Inheritance}: každá třída v hierarchii má vlastní tabulku,
+jejíž primární klíč je zároveň cizím klíčem na nadřazenou tabulku. Vztahy
+M:N jsou rozloženy na dvě vazby 1:N přes mezilehlou tabulku.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{02b_relational_model.png}
+  \caption{Konsolidovaný model pro relační databázi}
+  \label{fig:relational}
+\end{figure}
+
+\section{Grafový model (Neo4j)}
+
+Grafový model využívá vícenásobné labely pro dědičnost
+(např. uzel s labely \texttt{:Komponenta:PasivniKomponenta:Rezistor}).
+Hrany jsou pojmenovány \textsc{velkými písmeny} a mohou nést vlastní atributy
+-- ty jsou zachyceny jako asociační třídy.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{02c_graph_model.png}
+  \caption{Konsolidovaný model pro grafovou databázi}
+  \label{fig:graph}
+\end{figure}
+
+\section{ER diagram}
+
+Kompletní ER diagram datového modelu je zobrazen na \autoref{fig:er_diagram}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{03_er_diagram.png}
+  \caption{ER diagram datového modelu}
+  \label{fig:er_diagram}
+\end{figure}
+
+\section{Popis tabulek}
+
+\subsection{Tabulka \texttt{component\_categories}}
+
+\begin{table}[H]
+  \centering
+  \caption{Tabulka component\_categories}
+  \begin{tabularx}{\textwidth}{llX}
+    \toprule
+    \textbf{Sloupec} & \textbf{Typ}        & \textbf{Popis} \\
+    \midrule
+    id               & SERIAL PK           & Primární klíč \\
+    name             & VARCHAR(100) UNIQUE  & Název kategorie (Rezistor, IC, \ldots) \\
+    description      & TEXT                & Popis kategorie \\
+    parent\_id       & INTEGER FK          & Nadřazená kategorie (stromová struktura) \\
+    icon             & VARCHAR(50)         & Název ikony pro UI \\
+    created\_at      & TIMESTAMPTZ         & Čas vytvoření \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Tabulka \texttt{components}}
+
+\begin{table}[H]
+  \centering
+  \caption{Tabulka components}
+  \begin{tabularx}{\textwidth}{llX}
+    \toprule
+    \textbf{Sloupec}    & \textbf{Typ}         & \textbf{Popis} \\
+    \midrule
+    id                  & SERIAL PK            & Primární klíč \\
+    part\_number        & VARCHAR(100) UNIQUE  & Katalogové číslo výrobce \\
+    name                & VARCHAR(200)         & Název součástky \\
+    category\_id        & INTEGER FK           & Kategorie \\
+    manufacturer        & VARCHAR(150)         & Výrobce \\
+    value               & VARCHAR(50)          & Hodnota (10k, 100nF, \ldots) \\
+    unit                & VARCHAR(20)          & Jednotka (Ω, F, H, V, A, \ldots) \\
+    package             & VARCHAR(50)          & Pouzdro (SMD 0402, DIP-8, TO-92, \ldots) \\
+    tolerance           & VARCHAR(20)          & Tolerance (±5 \%, ±1 \%, \ldots) \\
+    voltage\_rating     & VARCHAR(30)          & Maximální napětí \\
+    datasheet\_url      & TEXT                 & URL na datasheet \\
+    barcode             & VARCHAR(100)         & Čárový kód EAN/QR \\
+    min\_stock          & INTEGER DEFAULT 0    & Minimální zásoba \\
+    description         & TEXT                 & Popis \\
+    notes               & TEXT                 & Interní poznámky \\
+    is\_active          & BOOLEAN DEFAULT TRUE & Aktivní / archivována \\
+    created\_at         & TIMESTAMPTZ          & Čas vytvoření \\
+    updated\_at         & TIMESTAMPTZ          & Čas poslední změny \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Tabulka \texttt{locations}}
+
+\begin{table}[H]
+  \centering
+  \caption{Tabulka locations}
+  \begin{tabularx}{\textwidth}{llX}
+    \toprule
+    \textbf{Sloupec} & \textbf{Typ}         & \textbf{Popis} \\
+    \midrule
+    id               & SERIAL PK            & Primární klíč \\
+    code             & VARCHAR(50) UNIQUE   & Unikátní kód místa (A-01-03) \\
+    name             & VARCHAR(150)         & Popis místa (Regál A, přihrádka 3) \\
+    section          & VARCHAR(50)          & Sekce skladu \\
+    shelf            & VARCHAR(50)          & Regál \\
+    bin              & VARCHAR(50)          & Přihrádka / zásobník \\
+    parent\_id       & INTEGER FK           & Nadřazené místo \\
+    capacity         & INTEGER              & Kapacita (počet zásobníků) \\
+    is\_active       & BOOLEAN DEFAULT TRUE & Aktivní \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Tabulka \texttt{stock}}
+
+\begin{table}[H]
+  \centering
+  \caption{Tabulka stock (zásoby)}
+  \begin{tabularx}{\textwidth}{llX}
+    \toprule
+    \textbf{Sloupec}  & \textbf{Typ}     & \textbf{Popis} \\
+    \midrule
+    id                & SERIAL PK        & Primární klíč \\
+    component\_id     & INTEGER FK       & Odkaz na součástku \\
+    location\_id      & INTEGER FK       & Odkaz na místo \\
+    quantity          & INTEGER NOT NULL & Aktuální množství \\
+    reserved\_qty     & INTEGER DEFAULT 0& Rezervované množství \\
+    unit\_price       & NUMERIC(12,4)    & Pořizovací cena za kus \\
+    updated\_at       & TIMESTAMPTZ      & Čas poslední aktualizace \\
+    \midrule
+    \multicolumn{3}{l}{\textit{UNIQUE (component\_id, location\_id)}} \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Tabulka \texttt{stock\_movements}}
+
+\begin{table}[H]
+  \centering
+  \caption{Tabulka stock\_movements (pohyby zásob)}
+  \begin{tabularx}{\textwidth}{llX}
+    \toprule
+    \textbf{Sloupec}    & \textbf{Typ}       & \textbf{Popis} \\
+    \midrule
+    id                  & SERIAL PK          & Primární klíč \\
+    movement\_type      & movement\_type\_enum & RECEIPT / ISSUE / TRANSFER / ADJUSTMENT \\
+    component\_id       & INTEGER FK         & Součástka \\
+    from\_location\_id  & INTEGER FK         & Zdrojové místo (NULL pro RECEIPT) \\
+    to\_location\_id    & INTEGER FK         & Cílové místo (NULL pro ISSUE) \\
+    quantity            & INTEGER NOT NULL   & Množství pohybu \\
+    unit\_price         & NUMERIC(12,4)      & Cena za kus \\
+    reference           & VARCHAR(100)       & Číslo dokladu (faktura, projekt, \ldots) \\
+    project\_id         & INTEGER FK         & Projekt (pro ISSUE) \\
+    order\_item\_id     & INTEGER FK         & Položka objednávky (pro RECEIPT) \\
+    notes               & TEXT               & Poznámka \\
+    created\_by         & INTEGER FK         & Uživatel \\
+    created\_at         & TIMESTAMPTZ        & Čas pohybu \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+

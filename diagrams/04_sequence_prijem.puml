@@ -1,0 +1,114 @@
+@startuml 04_sequence_prijem
+!theme cerulean-outline
+title WMS – Sekvenční diagram: Příjem součástek na sklad
+
+skinparam backgroundColor #FAFAFA
+skinparam sequence {
+  ArrowColor #1A5276
+  ActorBorderColor #2E86C1
+  LifeLineBorderColor #85C1E9
+  LifeLineBackgroundColor #EBF5FB
+  ParticipantBackgroundColor #D6EAF8
+  ParticipantBorderColor #2E86C1
+  BoxBackgroundColor #F8F9FA
+  BoxBorderColor #BDC3C7
+}
+
+actor "Skladník" as Skladnik
+participant "Webový\nfrontend" as UI
+participant "FastAPI\nbackend" as API
+participant "StockService" as SVC
+database "PostgreSQL" as DB
+participant "NotifService" as NOTIF
+
+== Přihlášení a otevření formuláře příjmu ==
+
+Skladnik -> UI : Klikne na „Nový příjem"
+UI -> API : GET /api/orders?status=CONFIRMED
+API -> DB : SELECT * FROM orders WHERE status='CONFIRMED'
+DB --> API : seznam otevřených objednávek
+API --> UI : 200 OK [orders]
+UI --> Skladnik : Zobrazí formulář (volba objednávky nebo volný příjem)
+
+== Výběr objednávky (nepovinné) ==
+
+alt Příjem na základě objednávky
+  Skladnik -> UI : Vybere objednávku #ORD-2026-042
+  UI -> API : GET /api/orders/42/items
+  API -> DB : SELECT order_items JOIN components WHERE order_id=42
+  DB --> API : položky objednávky
+  API --> UI : 200 OK [order_items]
+  UI --> Skladnik : Předvyplní položky objednávky
+else Volný příjem (bez objednávky)
+  Skladnik -> UI : Skenuje čárový kód součástky
+  UI -> API : GET /api/components?barcode=xyz
+  API -> DB : SELECT * FROM components WHERE barcode='xyz'
+  DB --> API : komponenta
+  API --> UI : 200 OK [component]
+  UI --> Skladnik : Zobrazí detail součástky
+end
+
+== Zadání položek příjmu ==
+
+loop Pro každou přijímanou položku
+  Skladnik -> UI : Zadá: množství, umístění (přihrádka), cenu/ks
+  UI -> UI : Lokální validace (množství > 0)
+end
+
+== Potvrzení příjmu ==
+
+Skladnik -> UI : Klikne „Uložit příjem"
+UI -> API : POST /api/stock/receive\n{items: [{component_id, location_id, qty, price}], reference, order_id?}
+activate API
+
+API -> API : Validace JWT tokenu
+API -> API : Kontrola oprávnění (SKLADNIK / ADMIN)
+
+API -> SVC : process_receipt(items, user_id, reference)
+activate SVC
+
+loop Pro každou položku
+  SVC -> DB : BEGIN TRANSACTION
+  SVC -> DB : SELECT stock WHERE component_id=X AND location_id=Y FOR UPDATE
+  
+  alt Zásoba na místě neexistuje
+    SVC -> DB : INSERT INTO stock (component_id, location_id, quantity, unit_price)
+  else Zásoba existuje
+    SVC -> DB : UPDATE stock SET quantity = quantity + :qty,\nunit_price = weighted_avg_price\nWHERE id = :stock_id
+  end
+  
+  SVC -> DB : INSERT INTO stock_movements\n(RECEIPT, component_id, to_location_id, qty, ...)
+  
+  alt Příjem navazuje na objednávku
+    SVC -> DB : UPDATE order_items SET quantity_received = quantity_received + :qty
+    SVC -> DB : UPDATE orders SET status='RECEIVED' IF fully_received
+  end
+  
+  SVC -> DB : COMMIT
+end
+
+SVC -> DB : SELECT total_stock WHERE component_id IN (:ids)
+SVC -> NOTIF : check_low_stock(components)
+
+alt Zásoby obnoveny nad minimum
+  NOTIF -> NOTIF : clear_low_stock_alert(component_id)
+end
+
+SVC --> API : {receipt_id, movements: [...]}
+deactivate SVC
+
+API -> DB : INSERT INTO audit_log (entity='stock_movement', action='RECEIPT', ...)
+API --> UI : 201 Created\n{receipt_id, summary}
+deactivate API
+
+UI --> Skladnik : Zobrazí potvrzení příjmu
+UI -> UI : Nabídne tisk příjemky (PDF)
+
+opt Tisk příjemky
+  Skladnik -> UI : Klikne „Tisknout příjemku"
+  UI -> API : GET /api/stock/receipt/:id/pdf
+  API --> UI : PDF dokument
+  UI --> Skladnik : Otevře PDF k tisku
+end
+
+@enduml

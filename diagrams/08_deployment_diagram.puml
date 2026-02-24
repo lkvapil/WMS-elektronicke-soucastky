@@ -1,0 +1,119 @@
+@startuml 08_deployment_diagram
+!theme cerulean-outline
+title WMS Elektronické součástky – Deployment diagram (Docker Compose)
+
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #D6EAF8
+  BorderColor #2E86C1
+  FontSize 12
+}
+skinparam artifact {
+  BackgroundColor #EBF5FB
+  BorderColor #85C1E9
+}
+skinparam database {
+  BackgroundColor #FAD7A0
+  BorderColor #E67E22
+}
+skinparam cloud {
+  BackgroundColor #D5F5E3
+  BorderColor #27AE60
+}
+
+'══════════════════════════════════════════════════════════════════════════════
+'  UŽIVATELSKÉ ZAŘÍZENÍ
+'══════════════════════════════════════════════════════════════════════════════
+node "Uživatelský počítač\n/ Tablet / Telefon" as Client {
+  artifact "Webový prohlížeč\n(Chrome / Firefox / Safari)" as Browser
+  artifact "Čtečka QR / EAN\n(USB HID)" as Scanner
+}
+
+'══════════════════════════════════════════════════════════════════════════════
+'  DOCKER HOST (lokální server nebo VM)
+'══════════════════════════════════════════════════════════════════════════════
+node "Docker Host\n(Linux server / macOS)" as DockerHost {
+
+  node "Container: nginx\n(Reverse Proxy + SSL)" as Nginx {
+    artifact "nginx.conf" as NginxConf
+  }
+  
+  node "Container: frontend\n(Node.js static)" as FEContainer {
+    artifact "React App\n(dist/index.html)" as ReactDist
+    note right
+      PORT: 3000 (internal)
+      Image: node:20-alpine
+    end note
+  }
+  
+  node "Container: backend\n(Python FastAPI)" as BEContainer {
+    artifact "FastAPI App\n(uvicorn)" as FastAPIApp
+    artifact "Celery Worker\n(background tasks)" as CeleryWorker
+    note right
+      PORT: 8000 (internal)
+      Image: python:3.11-slim
+    end note
+  }
+  
+  node "Container: postgres\n(Primary DB)" as PGContainer {
+    database "PostgreSQL 15\nwms_db" as PGDB
+    artifact "init.sql\n(schema + seed)" as InitSQL
+    note right
+      PORT: 5432 (internal)
+      Volume: pg_data
+    end note
+  }
+  
+  node "Container: redis\n(Cache + Queue)" as RedisContainer {
+    database "Redis 7\n(cache + Celery broker)" as RedisDB
+    note right
+      PORT: 6379 (internal)
+      Volume: redis_data
+    end note
+  }
+  
+  node "Container: minio\n(Object Storage)" as MinioContainer {
+    database "MinIO\n(PDF reporty, datasheets)" as MinioStorage
+    note right
+      PORT: 9000 / 9001
+      Volume: minio_data
+    end note
+  }
+
+}
+
+'══════════════════════════════════════════════════════════════════════════════
+'  EXTERNÍ SLUŽBY
+'══════════════════════════════════════════════════════════════════════════════
+cloud "Externí služby" as External {
+  artifact "SMTP Server\n(Postfix / SendGrid)" as SMTP
+  artifact "Zálohovací\núložiště (S3 / NAS)" as Backup
+}
+
+'══════════════════════════════════════════════════════════════════════════════
+'  PROPOJENÍ
+'══════════════════════════════════════════════════════════════════════════════
+
+Browser --> Nginx         : HTTPS :443
+Scanner --> Browser       : USB HID (lokální)
+
+Nginx --> FEContainer     : HTTP :3000
+Nginx --> BEContainer     : HTTP :8000 (/api/*)
+
+BEContainer --> PGContainer    : TCP :5432 (SQLAlchemy)
+BEContainer --> RedisContainer : TCP :6379 (cache + sessions)
+BEContainer --> MinioContainer : HTTP :9000 (S3 API)
+BEContainer --> SMTP           : SMTP :587 (notifikace)
+CeleryWorker --> RedisContainer : TCP :6379 (Celery broker)
+CeleryWorker --> BEContainer    : inter-container
+
+PGContainer --> Backup         : pg_dump (cron backup)
+MinioContainer --> Backup      : MC mirror
+
+note bottom of DockerHost
+  docker-compose.yml definuje síť wms-network,
+  volumes: pg_data, redis_data, minio_data
+  a environment variables (.env soubor)
+end note
+
+@enduml

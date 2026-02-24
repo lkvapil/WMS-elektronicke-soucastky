@@ -1,0 +1,120 @@
+@startuml 05_sequence_vydej
+!theme cerulean-outline
+title WMS – Sekvenční diagram: Výdej součástek ze skladu (na projekt)
+
+skinparam backgroundColor #FAFAFA
+skinparam sequence {
+  ArrowColor #1A5276
+  ActorBorderColor #2E86C1
+  LifeLineBorderColor #85C1E9
+  LifeLineBackgroundColor #EBF5FB
+  ParticipantBackgroundColor #D6EAF8
+  ParticipantBorderColor #2E86C1
+  BoxBackgroundColor #F8F9FA
+  BoxBorderColor #BDC3C7
+}
+
+actor "Skladník" as Skladnik
+participant "Webový\nfrontend" as UI
+participant "FastAPI\nbackend" as API
+participant "StockService" as SVC
+database "PostgreSQL" as DB
+participant "NotifService" as NOTIF
+
+== Vyhledání projektu ==
+
+Skladnik -> UI : Klikne na „Nový výdej"
+UI -> API : GET /api/projects?status=ACTIVE
+API -> DB : SELECT * FROM projects WHERE status='ACTIVE'
+DB --> API : seznam projektů
+API --> UI : 200 OK [projects]
+UI --> Skladnik : Zobrazí výběr projektu
+
+Skladnik -> UI : Vybere projekt „PCB-2026-Řídící jednotka"
+
+== Přidání položek výdeje ==
+
+loop Pro každou vydávanou součástku
+  Skladnik -> UI : Skenuje čárový kód / hledá součástku
+  UI -> API : GET /api/stock?component_id=X
+  API -> DB : SELECT stock JOIN locations WHERE component_id=X AND quantity>0
+  DB --> API : dostupné zásoby dle umístění
+  API --> UI : [{ location, available_qty }]
+  UI --> Skladnik : Zobrazí dostupná místa + množství
+
+  Skladnik -> UI : Zadá: umístění, vydávané množství
+  
+  alt Požadované množství > dostupné zásoby
+    UI --> Skladnik : Varování „Nedostatek zásob na vybraném místě"
+    UI --> Skladnik : Nabídne alternativní umístění nebo celkové zásoby
+  end
+end
+
+== Potvrzení výdeje ==
+
+Skladnik -> UI : Klikne „Potvrdit výdej"
+UI -> API : POST /api/stock/issue\n{project_id, items: [{component_id, location_id, qty}], reference}
+activate API
+
+API -> API : Validace JWT tokenu + oprávnění
+API -> SVC : process_issue(items, project_id, user_id)
+activate SVC
+
+SVC -> DB : BEGIN TRANSACTION
+
+loop Pro každou položku
+  SVC -> DB : SELECT quantity FROM stock\nWHERE component_id=X AND location_id=Y FOR UPDATE
+  
+  alt quantity >= requested_qty
+    SVC -> DB : UPDATE stock\nSET quantity = quantity - :qty\nWHERE id = :stock_id
+    
+    SVC -> DB : INSERT INTO stock_movements\n(ISSUE, component_id, from_location_id=Y,\n project_id, qty, user_id, ...)
+  else Nedostatečné zásoby (race condition)
+    SVC -> DB : ROLLBACK
+    SVC --> API : InsufficientStockError
+    API --> UI : 409 Conflict\n{error: "Insufficient stock", component_id}
+    UI --> Skladnik : Chyba – zásoby se mezitím změnily
+  end
+end
+
+SVC -> DB : COMMIT
+
+'── Kontrola minimálních zásob ─────────────────────────────────────────────
+SVC -> DB : SELECT total_stock, min_stock\nWHERE component_id IN (:ids)
+DB --> SVC : zásoby vs. minimum
+SVC -> NOTIF : check_low_stock(components)
+
+loop Pro každou součástku pod minimem
+  NOTIF -> DB : SELECT * FROM users WHERE role IN ('ADMIN','SKLADNIK')
+  NOTIF -> NOTIF : send_alert(user_emails, component, current_stock, min_stock)
+  note right of NOTIF
+    Upozornění může být e-mail,
+    push notifikace nebo in-app alert
+  end note
+end
+
+SVC --> API : {issue_id, movements: [...]}
+deactivate SVC
+
+API -> DB : INSERT INTO audit_log (ISSUE, ...)
+API --> UI : 201 Created {issue_id, summary}
+deactivate API
+
+UI --> Skladnik : Potvrzení výdeje + shrnutí
+
+opt Tisk výdejky
+  Skladnik -> UI : „Tisknout výdejku"
+  UI -> API : GET /api/stock/issue/:id/pdf
+  API --> UI : PDF
+  UI --> Skladnik : Otevře PDF k tisku / uložení
+end
+
+== Zobrazení aktualizovaného stavu ==
+
+UI -> API : GET /api/stock?component_id IN (:ids)
+API -> DB : SELECT aktuální zásoby
+DB --> API : updated stock
+API --> UI : 200 OK
+UI --> Skladnik : Aktualizuje zobrazení zásob
+
+@enduml

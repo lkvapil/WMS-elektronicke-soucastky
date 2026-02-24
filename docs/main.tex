@@ -1,0 +1,211 @@
+\documentclass[12pt, a4paper]{report}
+
+%% ── Kódování a jazyk ────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[czech]{babel}
+
+%% ── Typografie ──────────────────────────────────────────────────────────────
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{setspace}
+\onehalfspacing
+
+%% ── Geometrie stránky ───────────────────────────────────────────────────────
+\usepackage[
+  top=25mm, bottom=25mm,
+  left=35mm, right=20mm,
+  headheight=15pt
+]{geometry}
+
+%% ── Záhlaví a zápatí ────────────────────────────────────────────────────────
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+%% ── Grafika ─────────────────────────────────────────────────────────────────
+\usepackage{graphicx}
+\graphicspath{{./images/}}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+
+%% ── Barvy a zvýraznění ──────────────────────────────────────────────────────
+\usepackage[dvipsnames]{xcolor}
+\definecolor{wmsblue}{RGB}{0, 83, 156}
+\definecolor{wmsgray}{RGB}{100, 100, 100}
+\definecolor{wmsgreen}{RGB}{34, 139, 34}
+
+%% ── Tabulky ─────────────────────────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{multirow}
+
+%% ── Výpisy kódu ─────────────────────────────────────────────────────────────
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!10},
+  keywordstyle=\color{wmsblue}\bfseries,
+  commentstyle=\color{wmsgray}\itshape,
+  stringstyle=\color{wmsgreen},
+  numbers=left,
+  numberstyle=\tiny\color{wmsgray},
+  numbersep=5pt
+}
+
+%% ── Matematika ───────────────────────────────────────────────────────────────
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{stmaryrd}
+
+%% ── Hypertextové odkazy ──────────────────────────────────────────────────────
+\usepackage[
+  colorlinks=true,
+  linkcolor=wmsblue,
+  citecolor=wmsblue,
+  urlcolor=wmsblue,
+  pdftitle={WMS – Elektronické součástky},
+  pdfauthor={Lukáš Kvapil},
+  pdfsubject={Warehouse Management System pro elektronické součástky}
+]{hyperref}
+
+%% ── Zkratky a glosář ─────────────────────────────────────────────────────────
+\usepackage{acronym}
+
+%% ── Bibliografie ─────────────────────────────────────────────────────────────
+\usepackage[backend=biber, style=iso-numeric, sorting=nyt]{biblatex}
+\addbibresource{literatura.bib}
+
+%% ── Tikz (volitelně pro jednoduché grafy inline) ─────────────────────────────
+\usepackage{tikz}
+\usetikzlibrary{shapes, arrows.meta, positioning, fit, calc}
+
+%% ── Vlastní příkazy ──────────────────────────────────────────────────────────
+\newcommand{\wms}{\textsc{WMS}}
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{TODO:} #1}}
+
+%% ─────────────────────────────────────────────────────────────────────────────
+%%  DOKUMENT
+%% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+%% ── Titulní strana ───────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+
+  {\color{wmsblue}\rule{\linewidth}{1.5pt}}
+  \vspace{0.5cm}
+
+  {\Huge\bfseries\color{wmsblue}
+    Systém pro správu skladu\\[0.4em]
+    elektronických součástek
+  }
+
+  \vspace{0.3cm}
+  {\color{wmsblue}\rule{\linewidth}{1.5pt}}
+
+  \vspace{1.5cm}
+
+  {\LARGE\bfseries WMS -- Elektronické součástky}
+
+  \vspace{0.8cm}
+  {\large Projektová dokumentace}
+
+  \vfill
+
+  \begin{tabular}{ll}
+    \textbf{Autor:}    & Lukáš Kvapil \\[4pt]
+    \textbf{Datum:}    & \today       \\[4pt]
+    \textbf{Verze:}    & 1.0.0        \\[4pt]
+  \end{tabular}
+
+  \vspace{1cm}
+  {\color{wmsgray}\small Dokumentace systému pro skladovou evidenci elektronických součástek}
+\end{titlepage}
+
+%% ── Abstakt ──────────────────────────────────────────────────────────────────
+\chapter*{Abstrakt}
+\addcontentsline{toc}{chapter}{Abstrakt}
+
+Tento dokument popisuje návrh a implementaci systému pro správu skladu
+(\textit{Warehouse Management System}, \wms) určeného pro evidenci elektronických
+součástek. Systém umožňuje sledovat zásoby součástek (rezistory, kondenzátory,
+tranzistory, integrované obvody a další), spravovat skladová místa, zpracovávat
+příjem a výdej zboží, generovat objednávky u dodavatelů a tvořit reporty o stavu
+skladu.
+
+Dokument obsahuje analýzu požadavků, datový model, architekturu systému a
+UML/PlantUML diagramy popisující klíčové procesy.
+
+\vspace{1cm}
+\noindent\textbf{Klíčová slova:} WMS, sklad, elektronické součástky, správa
+zásob, inventura, příjem, výdej, objednávky.
+
+%% ── Obsah ────────────────────────────────────────────────────────────────────
+\tableofcontents
+\listoffigures
+\listoftables
+
+%% ── Kapitoly ─────────────────────────────────────────────────────────────────
+\input{chapters/uvod}
+\input{chapters/pozadavky}
+\input{chapters/architektura}
+\input{chapters/datovy_model}
+\input{chapters/formalni_specifikace}
+\input{chapters/popis_procesu}
+\input{chapters/zaver}
+
+%% ── Bibliografie ─────────────────────────────────────────────────────────────
+\printbibliography[heading=bibintoc, title={Literatura a zdroje}]
+
+%% ── Přílohy ──────────────────────────────────────────────────────────────────
+\appendix
+\chapter{Slovník pojmů a zkratek}
+
+\begin{acronym}
+  \acro{WMS}{Warehouse Management System -- Systém pro správu skladu}
+  \acro{EAN}{European Article Number -- čárový kód}
+  \acro{QR}{Quick Response -- 2D čárový kód}
+  \acro{IC}{Integrated Circuit -- integrovaný obvod}
+  \acro{SMD}{Surface-Mount Device -- povrchová montáž}
+  \acro{THT}{Through-Hole Technology -- průchozí montáž}
+  \acro{REST}{Representational State Transfer -- architektonický styl API}
+  \acro{CRUD}{Create, Read, Update, Delete -- základní databázové operace}
+  \acro{ER}{Entity-Relationship -- diagram datových entit a vztahů}
+  \acro{UML}{Unified Modeling Language -- unifikovaný modelovací jazyk}
+\end{acronym}
+
+\chapter{Instalace a konfigurace}
+\label{app:instalace}
+
+\section*{Požadavky na prostředí}
+\begin{itemize}
+  \item Python 3.11+, Node.js 20+ nebo Java 17+
+  \item PostgreSQL 15+
+  \item Docker (volitelně)
+  \item PlantUML JAR pro regeneraci diagramů
+\end{itemize}
+
+\section*{Generování diagramů z PlantUML}
+\begin{lstlisting}[language=bash, caption={Generování PNG diagramů z PUML souborů}]
+# Instalace PlantUML (macOS)
+brew install plantuml
+
+# Generování vsech diagramu najednou
+plantuml -tpng diagrams/*.puml -o ../docs/images/
+
+# Nebo pomoci Makefile
+make diagrams
+\end{lstlisting}
+
+\end{document}

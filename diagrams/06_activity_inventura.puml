@@ -1,0 +1,94 @@
+@startuml 06_activity_inventura
+!theme cerulean-outline
+title WMS – Diagram aktivit: Průběh inventury skladu
+
+skinparam backgroundColor #FAFAFA
+skinparam activity {
+  BackgroundColor #D6EAF8
+  BorderColor #2E86C1
+  ArrowColor #1A5276
+  DiamondBackgroundColor #FDEBD0
+  DiamondBorderColor #E67E22
+  StartColor #1A5276
+  EndColor #1A5276
+}
+skinparam swimlane {
+  BorderColor #BDC3C7
+  TitleBackgroundColor #EBF5FB
+}
+
+|#D6EAF8| Administrátor |
+|#D5F5E3| Skladník       |
+|#FDEBD0| Systém         |
+
+|Administrátor|
+start
+:Naplánuje inventuru\n(datum, sekce, typ: úplná / částečná);
+:Zahájí inventurní cyklus\nv systému;
+
+|Systém|
+:Vytvoří záznam InventoryCycle\n(status = IN_PROGRESS);
+:Zablokuje zásoby:\nzamezí pohybům během počítání;
+:Vygeneruje inventurní listy\ndle skladových míst (PDF / CSV)\ns aktuálními evidovanými množstvími;
+
+|Administrátor|
+:Rozdělí inventurní listy\nskladníkům dle sekcí;
+
+|Skladník|
+:Obdrží inventurní list\n(papírový nebo v tabletu);
+
+repeat
+  :Přejde na skladové místo\n(regál / přihrádka);
+  :Fyzicky spočítá součástky;
+  :Zadá fyzicky zjištěné\nmnožství do systému\n(nebo zapíše na list);
+  
+  |Systém|
+  :Porovná zadaný počet\ns evidovaným množstvím;
+  
+  if (Odpovídá evidence?) then (ANO)
+    :Označí položku jako\n✓ v pořádku;
+  else (NE – rozdíl)
+    :Označí položku jako\n⚠ Rozdíl (přebytek / manko);
+    :Uloží rozdíl ke schválení;
+    
+    |Skladník|
+    :Překontroluje místo\n(znovu přepočítá);
+    
+    if (Potvrdí rozdíl?) then (ANO)
+      :Zapíše potvrzení rozdílu;
+    else (NE – byl to chyba)
+      :Opraví zadaný počet;
+    end if
+  end if
+  
+  |Skladník|
+repeat while (Zbývají nepočítaná místa?) is (ANO)
+
+:Odevzdá vyplněný inventurní list;
+
+|Administrátor|
+:Zkontroluje a přezkoumá\nvšechny rozdíly;
+:Rozhodne o každém rozdílu\n(schválí / zamítne);
+
+|Systém|
+if (Existují neschválené\npoložky?) then (ANO)
+  :Vrátí administrátorovi\nk opětovné kontrole;
+  |Administrátor|
+  :Prošetří a znovu rozhodne;
+  |Systém|
+else (NE – vše schváleno)
+endif
+
+:Vytvoří pohyby ADJUSTMENT\npro všechny schválené rozdíly;
+:Aktualizuje zásoby v tabulce stock;
+:Odblokuje zásoby\n(pohyby opět povoleny);
+:Uzavře InventoryCycle\n(status = CLOSED, end_date = NOW());
+:Vygeneruje inventurní protokol\n(PDF) s přehledem všech rozdílů\na korekcí;
+
+|Administrátor|
+:Archivuje protokol;
+:Notifikuje vedení o výsledcích;
+
+stop
+
+@enduml
