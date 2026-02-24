@@ -1,81 +1,77 @@
-@startuml 02a_conceptual_model
+@startuml Konceptualni model - WMS Elektronicke soucastky
 hide circle
-title WMS Elektronicke soucastky -- Konceptualni model trid
 
-skinparam backgroundColor #FFFFFF
-skinparam classBackgroundColor #F2F2F2
-skinparam classBorderColor #444444
-skinparam classArrowColor #222222
-skinparam classFontSize 11
-skinparam classAttributeIconSize 0
 
 abstract class PohybSkladu {
-  id : int
-  datum : DateTime
-  mnozstvi : int
+  - id : int
+  - datum : DateTime
+  - mnozstvi : int
   --
-  validovatMnozstvi()
-  ulozitZaznam()
+  + validovatMnozstvi()
+  + ulozitZaznam()
 }
 
 class Naskladneni {
-  lokace : String
+  - lokace : String
   --
-  provestNaskladneni()
-  zvysitMnozstvi()
+  + provestNaskladneni()
+  + zvysitMnozstvi()
 }
 
 class Vyskladneni {
-  cil : String
+  - cil : String
   --
-  provestVyskladneni()
-  snizitMnozstvi()
+  + provestVyskladneni()
+  + snizitMnozstvi()
 }
 
 class Presun {
-  zdrojLokace : String
-  cilovaLokace : String
+  - zdrojLokace : String
+  - cilovaLokace : String
   --
-  provestPresun()
+  + provestPresun()
 }
 
 class SkladovaLokace {
-  kodLokace : String
-  popis : String
+  - kodLokace : String
+  - popis : String
   --
-  pridatSoucastku()
-  odebratSoucastku()
-  zobrazObsah()
+  + pridatSoucastku()
+  + odebratSoucastku()
+  + zobrazObsah()
 }
 
 class Soucastka {
-  partNumber : String
-  nazev : String
-  kategorie : String
-  mnozstvi : int
+  - partNumber : String
+  - nazev : String
+  - kategorie : String
+  - mnozstvi : int
   --
-  aktualizovatUdaje()
-  ziskatStav()
+  + aktualizovatUdaje()
+  + ziskatStav()
 }
 
 class Dodavatel {
-  nazev : String
-  zeme : String
-  adresa : String
-  email : String
+  - nazev : String
+  - zeme : String
+  - adresa : String
+  - email : String
   --
-  aktualizovatKontakt()
-  zobrazSoucastky()
+  + aktualizovatKontakt()
+  + zobrazSoucastky()
 }
 
+' Generalizace
 PohybSkladu <|-- Naskladneni
 PohybSkladu <|-- Vyskladneni
 PohybSkladu <|-- Presun
 
-Dodavatel "1\n[katalogCislo]" --> "0..1" Soucastka : dodava >
+' Kvalifikovana vazba: Dodavatel[katalogCislo] -> 0..1 Soucastka
+Dodavatel "1 [katalogCislo]" --> "0..1" Soucastka : dodava >
 
-SkladovaLokace "1" o-- "0..*" Soucastka      : obsahuje >
-PohybSkladu "0..*" --> "1"    SkladovaLokace : probiha na >
-PohybSkladu "0..*" --> "1"    Soucastka      : tyka se >
+' Ostatni asociace
+SkladovaLokace "1" -- "0..*" Soucastka : obsahuje >
+PohybSkladu "0..*" --> "1" SkladovaLokace : probiha na >
+PohybSkladu "0..*" --> "1" Soucastka : tyka se >
 
 @enduml
