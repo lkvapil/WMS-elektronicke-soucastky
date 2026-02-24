@@ -5,9 +5,9 @@ title WMS Elektronické součástky – Use Case diagram
 skinparam actorStyle awesome
 skinparam backgroundColor #FAFAFA
 skinparam usecase {
-  BackgroundColor #EBF5FB
-  BorderColor #2E86C1
-  ArrowColor #1A5276
+  BackgroundColor #F2F2F2
+  BorderColor #444444
+  ArrowColor #222222
 }
 
 '─── Aktéři ───────────────────────────────────────────────────────────────────

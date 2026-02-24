@@ -2,10 +2,10 @@
 hide circle
 title WMS Elektronicke soucastky -- Konceptualni model trid
 
-skinparam backgroundColor #FAFAFA
-skinparam classBackgroundColor #EBF5FB
-skinparam classBorderColor #2E86C1
-skinparam classArrowColor #1A5276
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F2F2F2
+skinparam classBorderColor #444444
+skinparam classArrowColor #222222
 skinparam classFontSize 11
 skinparam classAttributeIconSize 0
 

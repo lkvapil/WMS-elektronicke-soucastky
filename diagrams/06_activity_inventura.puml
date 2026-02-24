@@ -4,17 +4,17 @@ title WMS – Diagram aktivit: Průběh inventury skladu
 
 skinparam backgroundColor #FAFAFA
 skinparam activity {
-  BackgroundColor #D6EAF8
-  BorderColor #2E86C1
-  ArrowColor #1A5276
-  DiamondBackgroundColor #FDEBD0
-  DiamondBorderColor #E67E22
-  StartColor #1A5276
-  EndColor #1A5276
+  BackgroundColor #E8E8E8
+  BorderColor #444444
+  ArrowColor #222222
+  DiamondBackgroundColor #D8D8D8
+  DiamondBorderColor #444444
+  StartColor #222222
+  EndColor #222222
 }
 skinparam swimlane {
-  BorderColor #BDC3C7
-  TitleBackgroundColor #EBF5FB
+  BorderColor #888888
+  TitleBackgroundColor #F2F2F2
 }
 
 |#D6EAF8| Administrátor |

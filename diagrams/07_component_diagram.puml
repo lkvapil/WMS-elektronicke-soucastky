@@ -4,27 +4,27 @@ title WMS Elektronické součástky – Komponentový diagram
 
 skinparam backgroundColor #FAFAFA
 skinparam component {
-  BackgroundColor #D6EAF8
-  BorderColor #2E86C1
-  ArrowColor #1A5276
+  BackgroundColor #E8E8E8
+  BorderColor #444444
+  ArrowColor #222222
   FontSize 11
 }
 skinparam package {
-  BackgroundColor #EBF5FB
-  BorderColor #85C1E9
+  BackgroundColor #F2F2F2
+  BorderColor #888888
   FontSize 12
 }
 skinparam database {
-  BackgroundColor #FAD7A0
-  BorderColor #E67E22
+  BackgroundColor #D8D8D8
+  BorderColor #555555
 }
 skinparam cloud {
-  BackgroundColor #D5F5E3
-  BorderColor #27AE60
+  BackgroundColor #EFEFEF
+  BorderColor #666666
 }
 skinparam node {
-  BackgroundColor #FDEBD0
-  BorderColor #CA6F1E
+  BackgroundColor #DCDCDC
+  BorderColor #555555
 }
 
 '══════════════════════════════════════════════════════════════════════════════

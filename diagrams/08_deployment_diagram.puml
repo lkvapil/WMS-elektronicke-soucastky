@@ -4,21 +4,21 @@ title WMS Elektronické součástky – Deployment diagram (Docker Compose)
 
 skinparam backgroundColor #FAFAFA
 skinparam node {
-  BackgroundColor #D6EAF8
-  BorderColor #2E86C1
+  BackgroundColor #E8E8E8
+  BorderColor #444444
   FontSize 12
 }
 skinparam artifact {
-  BackgroundColor #EBF5FB
-  BorderColor #85C1E9
+  BackgroundColor #F2F2F2
+  BorderColor #888888
 }
 skinparam database {
-  BackgroundColor #FAD7A0
-  BorderColor #E67E22
+  BackgroundColor #D8D8D8
+  BorderColor #555555
 }
 skinparam cloud {
-  BackgroundColor #D5F5E3
-  BorderColor #27AE60
+  BackgroundColor #EFEFEF
+  BorderColor #666666
 }
 
 '══════════════════════════════════════════════════════════════════════════════

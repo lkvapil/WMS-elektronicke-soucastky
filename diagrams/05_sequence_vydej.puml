@@ -4,14 +4,14 @@ title WMS – Sekvenční diagram: Výdej součástek ze skladu (na projekt)
 
 skinparam backgroundColor #FAFAFA
 skinparam sequence {
-  ArrowColor #1A5276
-  ActorBorderColor #2E86C1
-  LifeLineBorderColor #85C1E9
-  LifeLineBackgroundColor #EBF5FB
-  ParticipantBackgroundColor #D6EAF8
-  ParticipantBorderColor #2E86C1
-  BoxBackgroundColor #F8F9FA
-  BoxBorderColor #BDC3C7
+  ArrowColor #222222
+  ActorBorderColor #444444
+  LifeLineBorderColor #888888
+  LifeLineBackgroundColor #F2F2F2
+  ParticipantBackgroundColor #E8E8E8
+  ParticipantBorderColor #444444
+  BoxBackgroundColor #F5F5F5
+  BoxBorderColor #999999
 }
 
 actor "Skladník" as Skladnik
